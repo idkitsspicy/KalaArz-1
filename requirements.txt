@@ -1,0 +1,5 @@
+Flask>=2.2
+python-dotenv>=0.21
+google-generativeai>=0.2.0
+Werkzeug>=2.2
+Flask-Limiter>=2.8

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>KalaArz — Story Generator</title>
+  <style>
+    body {
+      background: #f6f1eb;
+      font-family: 'Georgia', serif;
+      color: #4b3f36;
+      text-align: center;
+      padding: 40px;
+    }
+    header h1 {
+      color: #7b4e35;
+      font-size: 2rem;
+      margin-bottom: 5px;
+    }
+    header p {
+      color: #5a4639;
+      font-size: 1rem;
+      margin-bottom: 30px;
+    }
+    form.card, section.card {
+      background: #fff4ee;
+      color: #4b3f36;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(123, 78, 53, 0.15);
+      margin-bottom: 30px;
+      display: inline-block;
+      text-align: left;
+      width: 100%;
+      max-width: 700px;
+    }
+    .hidden { display: none; }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      font-family: 'Georgia', serif;
+    }
+    button {
+      margin-top: 20px;
+      background: #7b4e35;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+    button:hover {
+      background: #c47f3c;
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      background: #a8a099;
+      cursor: not-allowed;
+      transform: none;
+    }
+    #status {
+      margin-top: 15px;
+      font-style: italic;
+      color: #5a4639;
+    }
+    .posts {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .post-card {
+      background: #fff4ee;
+      color: #4b3f36;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 15px rgba(123, 78, 53, 0.15);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .post-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(123, 78, 53, 0.2);
+    }
+    .post-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-bottom: 1px solid #d9cfc1;
+    }
+    .post-card-body {
+      padding: 15px;
+    }
+    .post-card-body h3 {
+      margin: 0 0 5px;
+      font-size: 18px;
+      color: #7b4e35;
+    }
+    .post-card-body p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #5a4639;
+    }
+    #postModal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+    }
+    #postModal .modal-content {
+      background: #fff4ee;
+      color: #4b3f36;
+      margin: 5% auto;
+      padding: 25px;
+      border-radius: 12px;
+      width: 80%;
+      max-width: 700px;
+      position: relative;
+      box-shadow: 0 8px 20px rgba(123,78,53,0.25);
+    }
+    #postModal .close {
+      position: absolute;
+      top: 15px; right: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      color: #7b4e35;
+      cursor: pointer;
+    }
+    #postModal img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="postModal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <img id="modalImage" src="" alt="" style="display:none;">
+    <h2 id="modalTitle"></h2>
+    <p id="modalStory"></p>
+    <p id="modalTags" style="font-size:0.85em;color:#666;"></p>
+  </div>
+</div>
+
+<div class="container">
+  <header>
+    <h1>KalaArz — Story Generator</h1>
+    <p>Enter product details, generate a story, edit it and publish. Your post appears in the gallery below.</p>
+  </header>
+
+  <section class="card">
+    <form id="craftForm">
+      <div>
+        <label>Name</label>
+        <input name="name" required>
+      </div>
+      <div>
+        <label>Age</label>
+        <input name="age" type="number" required>
+      </div>
+      <div>
+        <label>Place of Origin</label>
+        <input name="place" required placeholder="e.g., Jaipur">
+      </div>
+      <div>
+        <label>Product Name</label>
+        <input name="productName" required placeholder="e.g., Hand-carved Brass Elephant">
+      </div>
+      <div>
+        <label>Craft Type</label>
+        <input name="craftType" placeholder="e.g., Metalwork">
+      </div>
+      <label>Materials</label>
+      <input name="materials" placeholder="e.g., recycled brass, natural patina">
+      <label>Inspiration/Context</label>
+      <textarea name="inspiration" rows="2" placeholder="What inspired this piece?"></textarea>
+      <div>
+        <label>Target Audience</label>
+        <input name="audience" placeholder="e.g., collectors, home decorators">
+      </div>
+      <div>
+        <label>Language</label>
+        <select name="language">
+          <option>English</option>
+          <option>Hindi</option>
+          <option>Telugu</option>
+        </select>
+      </div>
+      <div>
+        <label>Tone</label>
+        <select name="tone">
+          <option>Warm & Personal</option>
+          <option>Elegant & Minimal</option>
+        </select>
+      </div>
+      <label>Upload Image (optional)</label>
+      <input type="file" name="image" accept="image/*">
+      <div style="margin-top:12px">
+        <button id="generateBtn" type="button">⚡ Generate AI Story</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="results" class="card hidden">
+    <h2>Generated (Editable)</h2>
+    <label>Story</label>
+    <textarea id="story" rows="5"></textarea>
+    <label>Tags (comma separated)</label>
+    <input id="tags">
+    <div style="margin-top:12px">
+      <button id="publishBtn" type="button">⬆ Publish</button>
+      <button id="cancelBtn" type="button">Cancel</button>
+      <span id="status" class="status"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Latest Posts</h2>
+    <div id="postsList" class="posts"></div>
+  </section>
+</div>
+
+<script type="module" src="/static/app.js"></script>
+
+</body>
+</html>
