@@ -118,66 +118,69 @@ async function onGenerate() {
     }
 }
 
-// --- PUBLISH TO FIRESTORE & STORAGE ---
+// --- PUBLISH TO FIRESTORE & STORAGE (Auth aware) ---
 async function onPublish() {
     const btn = $('#publishBtn');
     btn.disabled = true; btn.textContent = 'Publishing…';
     const statusEl = $('#status');
     statusEl.textContent = '';
 
-    try {
-        const user = auth.currentUser;
+    const craftForm = $('#craftForm');
+
+    onAuthStateChanged(auth, async (user) => {
         if (!user) {
             alert("⚠️ Please login as an NGO to publish.");
+            btn.disabled = false;
+            btn.textContent = '⬆ Publish';
             return;
         }
 
-        const craftForm = $('#craftForm');
-        const imageFile = craftForm.image.files[0];
-        let imageUrl = null;
+        try {
+            const imageFile = craftForm.image.files[0];
+            let imageUrl = null;
 
-        if (imageFile) {
-            statusEl.textContent = 'Uploading image...';
-            const fileName = `${Date.now()}-${imageFile.name}`;
-            const storageRef = ref(storage, `posts/${fileName}`);
-            const uploadTask = await uploadBytes(storageRef, imageFile);
-            imageUrl = await getDownloadURL(uploadTask.ref);
-            statusEl.textContent = 'Image uploaded!';
+            if (imageFile) {
+                statusEl.textContent = 'Uploading image...';
+                const fileName = `${Date.now()}-${imageFile.name}`;
+                const storageRef = ref(storage, `posts/${fileName}`);
+                const uploadTask = await uploadBytes(storageRef, imageFile);
+                imageUrl = await getDownloadURL(uploadTask.ref);
+                statusEl.textContent = 'Image uploaded!';
+            }
+
+            const postData = {
+                ngoId: user.uid,  // 🔑 attach Auth UID
+                name: craftForm.name.value,
+                age: craftForm.age.value,
+                place: craftForm.place.value,
+                productName: craftForm.productName.value,
+                craftType: craftForm.craftType.value,
+                materials: craftForm.materials.value,
+                inspiration: craftForm.inspiration.value,
+                audience: craftForm.audience.value,
+                language: craftForm.language.value,
+                tone: craftForm.tone.value,
+                story: $('#story').value,
+                tags: $('#tags').value.split(',').map(t => t.trim()).filter(t => t),
+                imageUrl,
+                createdAt: serverTimestamp()
+            };
+
+            statusEl.textContent = 'Saving data...';
+            const docRef = await addDoc(collection(db, 'posts'), postData);
+            statusEl.textContent = 'Published!';
+
+            addPostCard({ ...postData, id: docRef.id });
+            $('#results').classList.add('hidden');
+            craftForm.reset();
+        } catch (err) {
+            console.error(err);
+            statusEl.textContent = 'Error: ' + err.message;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '⬆ Publish';
         }
-
-      const postData = {
-    ngoId: user.uid,  // Required by Firestore rules
-    name: craftForm.name.value,
-    age: craftForm.age.value,
-    place: craftForm.place.value,
-    productName: craftForm.productName.value,
-    craftType: craftForm.craftType.value,
-    materials: craftForm.materials.value,
-    inspiration: craftForm.inspiration.value,
-    audience: craftForm.audience.value,
-    language: craftForm.language.value,
-    tone: craftForm.tone.value,
-    story: $('#story').value,
-    tags: $('#tags').value.split(',').map(t => t.trim()).filter(t => t),
-    imageUrl,
-    createdAt: serverTimestamp()
-};
-
-
-        statusEl.textContent = 'Saving data...';
-        const docRef = await addDoc(collection(db, 'posts'), postData);
-        statusEl.textContent = 'Published!';
-
-        addPostCard({ ...postData, id: docRef.id });
-        $('#results').classList.add('hidden');
-        craftForm.reset();
-    } catch (err) {
-        console.error(err);
-        statusEl.textContent = 'Error: ' + err.message;
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '⬆ Publish';
-    }
+    });
 }
 
 // --- LOAD POSTS FROM FIRESTORE ---
@@ -199,4 +202,3 @@ async function loadPosts() {
         postsList.textContent = 'Error loading posts.';
     }
 }
-
