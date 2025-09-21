@@ -1,36 +1,31 @@
 import os
-import json
-import shutil
 from flask import Flask, request, render_template, jsonify, g
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from werkzeug.utils import secure_filename
 import google.generativeai as genai
 import firebase_admin
 from firebase_admin import credentials, auth
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
 # Flask app + rate limiter
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
 app = Flask(__name__)
 limiter = Limiter(get_remote_address, app=app, default_limits=["20 per minute"])
 
-# -----------------------------------------------------------------------------
-# Firebase Admin setup
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
+# Firebase Admin setup (for token verification)
+# -------------------------------------------------------------------
 if not firebase_admin._apps:
-    if os.getenv("FIREBASE_SERVICE_ACCOUNT"):  
-        # Load from Render env var
+    if os.getenv("FIREBASE_SERVICE_ACCOUNT"):
         cred_dict = json.loads(os.getenv("FIREBASE_SERVICE_ACCOUNT"))
         cred = credentials.Certificate(cred_dict)
     else:
-        # Fallback: load from file
         cred = credentials.Certificate("firebase-service-account.json")
     firebase_admin.initialize_app(cred)
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
 # Gemini API setup
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 generation_config = {
@@ -46,9 +41,9 @@ model = genai.GenerativeModel(
     generation_config=generation_config,
 )
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
 # Firebase token verification helper
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
 def verify_firebase_token():
     auth_header = request.headers.get("Authorization", None)
     if not auth_header or not auth_header.startswith("Bearer "):
@@ -62,9 +57,9 @@ def verify_firebase_token():
         print("Token verification failed:", e)
         return None
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
 # Routes
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -72,46 +67,6 @@ def home():
 @app.route("/story")
 def story_page():
     return render_template("story.html")
-
-@app.route("/publish", methods=["POST"])
-def publish():
-    decoded = verify_firebase_token()
-    if not decoded:
-        return jsonify(ok=False, error="Unauthorized"), 401
-
-    user_uid = decoded["uid"]  # ✅ Firebase UID
-    print("Publishing story by UID:", user_uid)
-
-    if "image" not in request.files:
-        return jsonify(ok=False, error="No image provided"), 400
-
-    image = request.files["image"]
-    if image.filename == "":
-        return jsonify(ok=False, error="Empty filename"), 400
-
-    # Save uploaded file
-    filename = secure_filename(image.filename)
-    os.makedirs("uploads", exist_ok=True)
-    filepath = os.path.join("uploads", filename)
-    image.save(filepath)
-
-    # Analyze with Gemini
-    prompt_parts = [
-        "You are an expert visual story analyst. Please describe this picture in depth.",
-        {"mime_type": image.content_type, "data": open(filepath, "rb").read()},
-    ]
-
-    response = model.generate_content(prompt_parts)
-    story_text = response.text.strip() if response and response.text else "No story generated."
-
-    # Save story file (per user UID)
-    os.makedirs("stories", exist_ok=True)
-    story_filename = f"{user_uid}_{filename}.txt"
-    story_filepath = os.path.join("stories", story_filename)
-    with open(story_filepath, "w") as f:
-        f.write(story_text)
-
-    return jsonify(ok=True, story=story_text)
 
 @app.route("/generate", methods=["POST"])
 def generate_story():
@@ -122,7 +77,8 @@ def generate_story():
     user_uid = decoded["uid"]
     print("Generating story for UID:", user_uid)
 
-    description = request.form.get("description")
+    data = request.get_json() or {}
+    description = data.get("prompt") or data.get("description")
     if not description:
         return jsonify(ok=False, error="No description provided"), 400
 
@@ -132,8 +88,8 @@ def generate_story():
 
     return jsonify(ok=True, story=story_text)
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
 # Run
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
