@@ -26,6 +26,20 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        console.log("✅ Logged in as:", user.uid);
+        currentUser = user;
+    } else {
+        console.log("❌ No user logged in");
+        currentUser = null;
+    }
+});
+
+// Debug: make it visible in DevTools
+window.auth = auth;
 
 // --- HELPERS ---
 const $ = s => document.querySelector(s);
@@ -127,62 +141,60 @@ async function onPublish() {
 
     const craftForm = $('#craftForm');
 
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            alert("⚠️ Please login as an NGO to publish.");
-            btn.disabled = false;
-            btn.textContent = '⬆ Publish';
-            return;
+    if (!currentUser) {
+        alert("⚠️ Please login as an NGO to publish.");
+        btn.disabled = false;
+        btn.textContent = '⬆ Publish';
+        return;
+    }
+
+    try {
+        const imageFile = craftForm.image.files[0];
+        let imageUrl = null;
+
+        if (imageFile) {
+            statusEl.textContent = 'Uploading image...';
+            const fileName = `${Date.now()}-${imageFile.name}`;
+            console.log("User UID (auth):", currentUser.uid);
+            console.log("Upload path:", `posts/${currentUser.uid}/${fileName}`);
+            const storageRef = ref(storage, `posts/${currentUser.uid}/${fileName}`);
+            const uploadTask = await uploadBytes(storageRef, imageFile);
+            imageUrl = await getDownloadURL(uploadTask.ref);
+            statusEl.textContent = 'Image uploaded!';
         }
-        
-        try {
-            const imageFile = craftForm.image.files[0];
-            let imageUrl = null;
 
-            if (imageFile) {
-                statusEl.textContent = 'Uploading image...';
-                const fileName = `${Date.now()}-${imageFile.name}`;
-                console.log("User UID (auth):", user.uid);
-                console.log("Upload path:", `posts/${user.uid}/${fileName}`);
-                const storageRef = ref(storage, `posts/${user.uid}/${fileName}`);
-                const uploadTask = await uploadBytes(storageRef, imageFile);
-                imageUrl = await getDownloadURL(uploadTask.ref);
-                statusEl.textContent = 'Image uploaded!';
-            }
+        const postData = {
+            ngoId: currentUser.uid, // 🔑 attach Auth UID
+            name: craftForm.name.value,
+            age: craftForm.age.value,
+            place: craftForm.place.value,
+            productName: craftForm.productName.value,
+            craftType: craftForm.craftType.value,
+            materials: craftForm.materials.value,
+            inspiration: craftForm.inspiration.value,
+            audience: craftForm.audience.value,
+            language: craftForm.language.value,
+            tone: craftForm.tone.value,
+            story: $('#story').value,
+            tags: $('#tags').value.split(',').map(t => t.trim()).filter(t => t),
+            imageUrl,
+            createdAt: serverTimestamp()
+        };
 
-            const postData = {
-                ngoId: user.uid,  // 🔑 attach Auth UID
-                name: craftForm.name.value,
-                age: craftForm.age.value,
-                place: craftForm.place.value,
-                productName: craftForm.productName.value,
-                craftType: craftForm.craftType.value,
-                materials: craftForm.materials.value,
-                inspiration: craftForm.inspiration.value,
-                audience: craftForm.audience.value,
-                language: craftForm.language.value,
-                tone: craftForm.tone.value,
-                story: $('#story').value,
-                tags: $('#tags').value.split(',').map(t => t.trim()).filter(t => t),
-                imageUrl,
-                createdAt: serverTimestamp()
-            };
+        statusEl.textContent = 'Saving data...';
+        const docRef = await addDoc(collection(db, 'posts'), postData);
+        statusEl.textContent = 'Published!';
 
-            statusEl.textContent = 'Saving data...';
-            const docRef = await addDoc(collection(db, 'posts'), postData);
-            statusEl.textContent = 'Published!';
-
-            addPostCard({ ...postData, id: docRef.id });
-            $('#results').classList.add('hidden');
-            craftForm.reset();
-        } catch (err) {
-            console.error(err);
-            statusEl.textContent = 'Error: ' + err.message;
-        } finally {
-            btn.disabled = false;
-            btn.textContent = '⬆ Publish';
-        }
-    });
+        addPostCard({ ...postData, id: docRef.id });
+        $('#results').classList.add('hidden');
+        craftForm.reset();
+    } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Error: ' + err.message;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '⬆ Publish';
+    }
 }
 
 // --- LOAD POSTS FROM FIRESTORE ---
@@ -204,5 +216,6 @@ async function loadPosts() {
         postsList.textContent = 'Error loading posts.';
     }
 }
+
 
 
