@@ -134,7 +134,7 @@ async function onPublish() {
             btn.textContent = '⬆ Publish';
             return;
         }
-
+        
         try {
             const imageFile = craftForm.image.files[0];
             let imageUrl = null;
@@ -142,6 +142,8 @@ async function onPublish() {
             if (imageFile) {
                 statusEl.textContent = 'Uploading image...';
                 const fileName = `${Date.now()}-${imageFile.name}`;
+                console.log("User UID (auth):", user?.uid);
+                console.log("Upload path:", `posts/${user?.uid}/${fileName}`);
                 const storageRef = ref(storage, `posts/${user.uid}/${fileName}`);
                 const uploadTask = await uploadBytes(storageRef, imageFile);
                 imageUrl = await getDownloadURL(uploadTask.ref);
@@ -202,4 +204,5 @@ async function loadPosts() {
         postsList.textContent = 'Error loading posts.';
     }
 }
+
 
