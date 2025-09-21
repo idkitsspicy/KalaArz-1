@@ -144,6 +144,41 @@
       margin-bottom: 15px;
     }
   </style>
+  <!-- Firebase v10 SDKs -->
+<script type="module">
+  // Import required Firebase functions
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+
+  // Your Firebase project config (from Firebase Console)
+  const firebaseConfig = {
+   apiKey: "AIzaSyBnBjnfbt2N6LHxBVkSMmEuu_51JI0NHzI",
+  authDomain: "artisan-3b8d6.firebaseapp.com",
+  databaseURL: "https://artisan-3b8d6-default-rtdb.firebaseio.com",
+  projectId: "artisan-3b8d6",
+  storageBucket: "artisan-3b8d6.firebasestorage.app",
+  messagingSenderId: "63442588763",
+  appId: "1:63442588763:web:72a583c2a6a1f26d63db7e",
+  measurementId: "G-01922BTK99"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // Example: detect login state
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log("Logged in as:", user.uid);
+      user.getIdToken().then((idToken) => {
+        console.log("ID Token:", idToken);
+      });
+    } else {
+      console.log("No user logged in");
+    }
+  });
+</script>
+
 </head>
 <body>
 
@@ -240,3 +275,4 @@
 </body>
 
 </html>
+
