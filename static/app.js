@@ -135,7 +135,8 @@ function openPostModal(post) {
 // ====================
 async function onGenerate() {
   const btn = $('#generateBtn');
-  btn.disabled = true; btn.textContent = 'Generating…';
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
   $('#status').textContent = '';
 
   try {
@@ -144,17 +145,30 @@ async function onGenerate() {
       alert('Fill in Name and Product Name!');
       return;
     }
-    const resp = await authFetch('/generate', {
+
+    if (!currentUser) {
+      alert('⚠️ Please login first!');
+      return;
+    }
+
+    const idToken = await currentUser.getIdToken();
+
+    const resp = await fetch('/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + idToken 
+      },
+      body: JSON.stringify({ prompt: payload.prompt })
     });
+
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Unknown error');
 
     $('#story').value = data.story || '';
     $('#tags').value = (data.tags || []).join(', ');
     $('#results').classList.remove('hidden');
+
   } catch (err) {
     alert('Generation failed: ' + err.message);
   } finally {
@@ -162,6 +176,7 @@ async function onGenerate() {
     btn.textContent = '⚡ Generate AI Story';
   }
 }
+
 
 // ====================
 // PUBLISH STORY + IMAGE
@@ -246,3 +261,4 @@ async function loadPosts() {
     postsList.textContent = 'Error loading posts.';
   }
 }
+
