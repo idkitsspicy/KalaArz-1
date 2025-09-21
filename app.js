@@ -142,7 +142,7 @@ async function onPublish() {
             if (imageFile) {
                 statusEl.textContent = 'Uploading image...';
                 const fileName = `${Date.now()}-${imageFile.name}`;
-                const storageRef = ref(storage, `posts/${fileName}`);
+                const storageRef = ref(storage, `posts/${user.uid}/${fileName}`);
                 const uploadTask = await uploadBytes(storageRef, imageFile);
                 imageUrl = await getDownloadURL(uploadTask.ref);
                 statusEl.textContent = 'Image uploaded!';
@@ -202,3 +202,4 @@ async function loadPosts() {
         postsList.textContent = 'Error loading posts.';
     }
 }
+
