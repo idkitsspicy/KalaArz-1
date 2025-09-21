@@ -145,16 +145,24 @@ async function onPublish() {
             statusEl.textContent = 'Image uploaded!';
         }
 
-        const postData = {
-            ngoId: user.uid,  // 👈 Required for Firestore security rule
-            name: craftForm.name.value,
-            place: craftForm.place.value,
-            productName: craftForm.productName.value,
-            story: $('#story').value,
-            tags: $('#tags').value.split(',').map(t => t.trim()).filter(t => t),
-            imageUrl,
-            createdAt: serverTimestamp()
-        };
+      const postData = {
+    ngoId: user.uid,  // Required by Firestore rules
+    name: craftForm.name.value,
+    age: craftForm.age.value,
+    place: craftForm.place.value,
+    productName: craftForm.productName.value,
+    craftType: craftForm.craftType.value,
+    materials: craftForm.materials.value,
+    inspiration: craftForm.inspiration.value,
+    audience: craftForm.audience.value,
+    language: craftForm.language.value,
+    tone: craftForm.tone.value,
+    story: $('#story').value,
+    tags: $('#tags').value.split(',').map(t => t.trim()).filter(t => t),
+    imageUrl,
+    createdAt: serverTimestamp()
+};
+
 
         statusEl.textContent = 'Saving data...';
         const docRef = await addDoc(collection(db, 'posts'), postData);
@@ -191,3 +199,4 @@ async function loadPosts() {
         postsList.textContent = 'Error loading posts.';
     }
 }
+
