@@ -5,11 +5,13 @@ from flask_limiter.util import get_remote_address
 import google.generativeai as genai
 import firebase_admin
 from firebase_admin import credentials, auth
+from flask_cors import CORS
 
 # -------------------------------------------------------------------
 # Flask app + rate limiter
 # -------------------------------------------------------------------
 app = Flask(__name__)
+CORS(app)
 limiter = Limiter(get_remote_address, app=app, default_limits=["20 per minute"])
 
 # -------------------------------------------------------------------
@@ -44,14 +46,10 @@ model = genai.GenerativeModel(
 # -------------------------------------------------------------------
 # Firebase token verification helper
 # -------------------------------------------------------------------
-def verify_firebase_token():
-    auth_header = request.headers.get("Authorization", None)
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return None
-    id_token = auth_header.split("Bearer ")[1]
+def verify_token(id_token):
     try:
         decoded = auth.verify_id_token(id_token)
-        g.user = decoded  # store user globally in request context
+        g.user = decoded
         return decoded
     except Exception as e:
         print("Token verification failed:", e)
@@ -69,27 +67,27 @@ def story_page():
     return render_template("story.html")
 
 @app.route("/generate", methods=["POST"])
-def generate_story():
-    decoded = verify_firebase_token()
+
+def generate():
+    data = request.get_json()
+    if "idToken" not in data:
+        return jsonify(ok=False, error="Missing ID token"), 401
+
+    decoded = verify_token(data["idToken"])
     if not decoded:
         return jsonify(ok=False, error="Unauthorized"), 401
 
     user_uid = decoded["uid"]
-    print("Generating story for UID:", user_uid)
+    prompt = data.get("prompt", "No prompt provided")
 
-    data = request.get_json() or {}
-    description = data.get("prompt") or data.get("description")
-    if not description:
-        return jsonify(ok=False, error="No description provided"), 400
+    # Here, you can call your AI/story generator
+    story_text = f"This is a generated story for UID {user_uid} based on: {prompt}"
 
-    prompt = f"Write a short engaging story based on: {description}"
-    response = model.generate_content(prompt)
-    story_text = response.text.strip() if response and response.text else "No story generated."
-
-    return jsonify(ok=True, story=story_text)
+    return jsonify(ok=True, uid=user_uid, story=story_text)
 
 # -------------------------------------------------------------------
 # Run
 # -------------------------------------------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+
