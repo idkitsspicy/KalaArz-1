@@ -3,9 +3,11 @@ import json
 from flask import Flask, request, jsonify, render_template, g
 import firebase_admin
 from firebase_admin import credentials, auth
+from flask_cors import CORS
 
 app = Flask(__name__)
-
+# Allow requests from your static site only
+CORS(app, origins=["https://kalaarz-3.onrender.com"])
 # Firebase Admin setup
 if not firebase_admin._apps:
     cred_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
@@ -73,3 +75,4 @@ def publish():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+
