@@ -6,6 +6,9 @@ import {
 import {
     getStorage, ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+import {
+    getAuth, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
 // --- FIREBASE CONFIG ---
 const firebaseConfig = {
@@ -22,6 +25,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
 
 // --- HELPERS ---
 const $ = s => document.querySelector(s);
@@ -122,6 +126,12 @@ async function onPublish() {
     statusEl.textContent = '';
 
     try {
+        const user = auth.currentUser;
+        if (!user) {
+            alert("⚠️ Please login as an NGO to publish.");
+            return;
+        }
+
         const craftForm = $('#craftForm');
         const imageFile = craftForm.image.files[0];
         let imageUrl = null;
@@ -136,6 +146,7 @@ async function onPublish() {
         }
 
         const postData = {
+            ngoId: user.uid,  // 👈 Required for Firestore security rule
             name: craftForm.name.value,
             place: craftForm.place.value,
             productName: craftForm.productName.value,
