@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - NGO</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .login-container {
+      background-color: #fff;
+      padding: 30px 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 1.6rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .role-text {
+      margin-top: 15px;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .error {
+      color: red;
+      font-size: 0.85rem;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <h2 id="formTitle">NGO Login</h2>
+    <form id="authForm" onsubmit="return false;">
+      <input type="text" id="ngoName" placeholder="Name of your Organisation" required>
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <input type="text" id="ngoId" placeholder="NGO ID (provided by admin)" required>
+
+      <button type="button" id="authBtn">Sign In</button>
+      <div id="errorMessage" class="error"></div>
+    </form>
+    <div class="role-text">Role: NGO Community Member</div>
+  </div>
+
+  <!-- Firebase + Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword 
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // 🔹 Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBnBjnfbt2N6LHxBVkSMmEuu_51JI0NHzI",
+      authDomain: "artisan-3b8d6.firebaseapp.com",
+      databaseURL: "https://artisan-3b8d6-default-rtdb.firebaseio.com",
+      projectId: "artisan-3b8d6",
+      storageBucket: "artisan-3b8d6.firebasestorage.app",
+      messagingSenderId: "63442588763",
+      appId: "1:63442588763:web:72a583c2a6a1f26d63db7e",
+      measurementId: "G-01922BTK99"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // DOM references
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const ngoIdInput = document.getElementById('ngoId');
+    const ngoNameInput = document.getElementById('ngoName');
+    const authBtn = document.getElementById('authBtn');
+    const errorMessage = document.getElementById('errorMessage');
+
+    // Allowed NGO IDs
+    const validNgoIds = ["NGO123", "NGO456", "NGO789"]; // replace with real ones
+
+    // Handle login only
+    authBtn.addEventListener('click', async () => {
+      const email = emailInput.value;
+      const password = passwordInput.value;
+      const ngoId = ngoIdInput.value.trim();
+      const ngoName = ngoNameInput.value;
+      errorMessage.textContent = '';
+
+      if (!validNgoIds.includes(ngoId)) {
+        errorMessage.textContent = "Invalid NGO ID. Contact admin.";
+        return;
+      }
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+
+        // ✅ Redirect after login
+   const userCredential = await signInWithEmailAndPassword(auth, email, password);
+const user = userCredential.user;
+
+// Redirect to story page with UID
+window.location.href = `https://kalaarz-1.onrender.com/story?uid=${user.uid}`;
+
+      } catch (error) {
+        errorMessage.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>
