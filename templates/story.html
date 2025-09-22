@@ -111,86 +111,9 @@
       font-size: 14px;
       color: #5a4639;
     }
-    #postModal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-    }
-    #postModal .modal-content {
-      background: #fff4ee;
-      color: #4b3f36;
-      margin: 5% auto;
-      padding: 25px;
-      border-radius: 12px;
-      width: 80%;
-      max-width: 700px;
-      position: relative;
-      box-shadow: 0 8px 20px rgba(123,78,53,0.25);
-    }
-    #postModal .close {
-      position: absolute;
-      top: 15px; right: 20px;
-      font-size: 28px;
-      font-weight: bold;
-      color: #7b4e35;
-      cursor: pointer;
-    }
-    #postModal img {
-      width: 100%;
-      border-radius: 10px;
-      margin-bottom: 15px;
-    }
   </style>
-  <!-- Firebase v10 SDKs -->
-<script type="module">
-  // Import required Firebase functions
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-
-  // Your Firebase project config (from Firebase Console)
-  const firebaseConfig = {
-   apiKey: "AIzaSyBnBjnfbt2N6LHxBVkSMmEuu_51JI0NHzI",
-  authDomain: "artisan-3b8d6.firebaseapp.com",
-  databaseURL: "https://artisan-3b8d6-default-rtdb.firebaseio.com",
-  projectId: "artisan-3b8d6",
-  storageBucket: "artisan-3b8d6.firebasestorage.app",
-  messagingSenderId: "63442588763",
-  appId: "1:63442588763:web:72a583c2a6a1f26d63db7e",
-  measurementId: "G-01922BTK99"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  // Example: detect login state
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      console.log("Logged in as:", user.uid);
-      user.getIdToken().then((idToken) => {
-        console.log("ID Token:", idToken);
-      });
-    } else {
-      console.log("No user logged in");
-    }
-  });
-</script>
-
 </head>
 <body>
-
-<div id="postModal">
-  <div class="modal-content">
-    <span class="close">&times;</span>
-    <img id="modalImage" src="" alt="" style="display:none;">
-    <h2 id="modalTitle"></h2>
-    <p id="modalStory"></p>
-    <p id="modalTags" style="font-size:0.85em;color:#666;"></p>
-  </div>
-</div>
 
 <div class="container">
   <header>
@@ -270,9 +193,103 @@
   </section>
 </div>
 
-<script type="module" src="/static/app.js"></script>
+<script type="module">
+  // --- Get UID from URL ---
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+  const userUid = getQueryParam("uid");
+  console.log("✅ User UID:", userUid);
+
+  // --- Auth Fetch with UID ---
+  async function authFetch(url, options = {}) {
+    options.headers = options.headers || {};
+    if (userUid) options.headers["X-User-UID"] = userUid;
+    return fetch(url, options);
+  }
+
+  // --- DOM ---
+  const $ = s => document.querySelector(s);
+  const generateBtn = $('#generateBtn');
+  const publishBtn = $('#publishBtn');
+  const cancelBtn = $('#cancelBtn');
+  const storyTextarea = $('#story');
+  const tagsInput = $('#tags');
+  const statusEl = $('#status');
+  const craftForm = $('#craftForm');
+  const resultsSection = $('#results');
+
+  // --- Generate Story ---
+  generateBtn?.addEventListener("click", async () => {
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Generating…';
+    statusEl.textContent = '';
+
+    try {
+      const formData = new FormData(craftForm);
+      const payload = Object.fromEntries(formData.entries());
+
+      const resp = await authFetch('/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await resp.json();
+      if (!data.ok) throw new Error(data.error || 'Unknown error');
+
+      storyTextarea.value = data.story || '';
+      tagsInput.value = (data.tags || []).join(', ');
+      resultsSection.classList.remove('hidden');
+      statusEl.textContent = 'Story generated!';
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = '❌ ' + err.message;
+    } finally {
+      generateBtn.disabled = false;
+      generateBtn.textContent = '⚡ Generate AI Story';
+    }
+  });
+
+  // --- Publish Story ---
+  publishBtn?.addEventListener("click", async () => {
+    publishBtn.disabled = true;
+    publishBtn.textContent = 'Publishing…';
+    statusEl.textContent = '';
+
+    try {
+      const formData = new FormData(craftForm);
+      formData.append("story", storyTextarea.value);
+      formData.append("tags", tagsInput.value);
+      if (userUid) formData.append("uid", userUid);
+
+      const resp = await authFetch('/publish', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await resp.json();
+      if (!data.ok) throw new Error(data.error || 'Unknown error');
+
+      statusEl.textContent = '✅ Published successfully!';
+      storyTextarea.value = '';
+      tagsInput.value = '';
+      resultsSection.classList.add('hidden');
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = '❌ ' + err.message;
+    } finally {
+      publishBtn.disabled = false;
+      publishBtn.textContent = '⬆ Publish';
+    }
+  });
+
+  // --- Cancel Button ---
+  cancelBtn?.addEventListener("click", () => {
+    resultsSection.classList.add('hidden');
+  });
+</script>
 
 </body>
-
 </html>
-
