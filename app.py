@@ -94,7 +94,10 @@ def extract_json_from_text(text: str):
         return None
 
 # ================== Routes ==================
-@app.route("/")
+
+# Serve story page and get UID from query params
+@app.route("/story")
+def story_page():
     uid = request.args.get("uid")
     if not uid:
         return "No UID provided. Please login first.", 403
@@ -135,6 +138,7 @@ def generate_story():
 @app.route("/publish", methods=["POST"])
 @limiter.limit("20/hour")
 def publish_story():
+    uid = request.form.get("uid")
     name = request.form.get("name","").strip()
     age = request.form.get("age","")
     place = request.form.get("place","").strip()
@@ -143,7 +147,7 @@ def publish_story():
     tags_raw = request.form.get("tags","")
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()][:5]
 
-    if not product_name or not story or not name or not place or not age:
+    if not uid or not product_name or not story or not name or not place or not age:
         return jsonify(ok=False, error="Missing required fields"), 400
 
     image_url = None
@@ -158,6 +162,7 @@ def publish_story():
 
     record = {
         "id": datetime.utcnow().strftime("%Y%m%d%H%M%S%f"),
+        "uid": uid,  # store Firebase UID
         "productName": product_name,
         "story": story,
         "tags": tags,
@@ -185,4 +190,3 @@ def get_posts():
 # ================== Run ==================
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=5000)
-
