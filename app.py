@@ -95,43 +95,10 @@ def extract_json_from_text(text: str):
 
 # ================== Routes ==================
 @app.route("/")
-def index():
-    return render_template("index.html")
-
-@app.route("/dashboard")
-def dashboard():
-    return render_template("dashboard.html")
-
-@app.route("/login")
-def login_page():
-    return render_template("login.html")
-
-@app.route("/the-cozy-drape")
-def cozy_drape_page():
-    return render_template("the-cozy-drape.html")
-
-@app.route("/saree-sutra")
-def saree_sutra_page():
-    return render_template("saree-sutra.html")
-
-@app.route("/bamboo-bloom")
-def bamboo_bloom_page():
-    return render_template("bamboo-bloom.html")
-from flask import request, render_template
-
-@app.route("/story")
-def story_page():
     uid = request.args.get("uid")
     if not uid:
         return "No UID provided. Please login first.", 403
     return render_template("story.html", uid=uid)
-
-@app.route("/<page_name>")
-def static_pages(page_name):
-    try:
-        return render_template(f"{page_name}.html")
-    except:
-        return "Page not found", 404
 
 # ----- AI Story Generation -----
 @app.route("/generate", methods=["POST"])
@@ -218,3 +185,4 @@ def get_posts():
 # ================== Run ==================
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=5000)
+
