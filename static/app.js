@@ -26,22 +26,16 @@ const publishBtn = $('#publishBtn');
 const storyTextarea = $('#story');
 const tagsInput = $('#tags');
 const statusEl = $('#status');
-let userIdToken = null; // will be received from kalaarz-3.com
 
-// --- AUTH TOKEN SETTER (called from static site) ---
-window.setIdTokenFromDashboard = function(idToken) {
-  userIdToken = idToken;
-  console.log("✅ ID token received from static site:", userIdToken);
-};
+// --- GET UID FROM FLASK TEMPLATE ---
+const userUID = "{{ uid }}";  // Flask injects UID here
+console.log("✅ Current user UID:", userUID);
 
-// --- HELPER FUNCTION TO CALL BACKEND ---
+// --- HELPER FUNCTION TO CALL BACKEND WITH UID ---
 async function authFetch(url, options = {}) {
-  if (!userIdToken) {
-    alert("⚠️ No ID token provided. Make sure the static site sent it!");
-    throw new Error("No ID token available");
-  }
   options.headers = options.headers || {};
-  options.headers["Authorization"] = "Bearer " + userIdToken;
+  // Include UID in headers for backend
+  options.headers["X-User-UID"] = userUID;
   return fetch(url, options);
 }
 
@@ -58,7 +52,7 @@ generateBtn?.addEventListener("click", async () => {
     const resp = await authFetch('/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description: prompt })
+      body: JSON.stringify({ description: prompt, uid: userUID })
     });
 
     const data = await resp.json();
@@ -88,12 +82,13 @@ publishBtn?.addEventListener("click", async () => {
 
     const formData = new FormData();
     formData.append("story", storyText);
+    formData.append("uid", userUID);  // Attach UID with the story
 
     // optional: attach image if available
     const imageFile = $('#image')?.files[0];
     if (imageFile) formData.append("image", imageFile);
 
-    const resp = await authFetch('/publish', {
+    const resp = await fetch('/publish', {
       method: 'POST',
       body: formData
     });
