@@ -117,6 +117,14 @@ def saree_sutra_page():
 @app.route("/bamboo-bloom")
 def bamboo_bloom_page():
     return render_template("bamboo-bloom.html")
+from flask import request, render_template
+
+@app.route("/story")
+def story_page():
+    uid = request.args.get("uid")
+    if not uid:
+        return "No UID provided. Please login first.", 403
+    return render_template("story.html", uid=uid)
 
 @app.route("/<page_name>")
 def static_pages(page_name):
