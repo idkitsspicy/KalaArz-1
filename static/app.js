@@ -71,39 +71,55 @@ generateBtn?.addEventListener("click", async () => {
 });
 
 // --- PUBLISH STORY ---
+// ================== PUBLISH STORY ==================
 publishBtn?.addEventListener("click", async () => {
-  publishBtn.disabled = true;
-  publishBtn.textContent = 'Publishing…';
-  statusEl.textContent = '';
+    publishBtn.disabled = true;
+    publishBtn.textContent = 'Publishing…';
+    statusEl.textContent = '';
 
-  try {
-    const storyText = storyTextarea.value;
-    if (!storyText) throw new Error("No story to publish");
+    try {
+        const storyText = storyTextarea.value;
+        if (!storyText) throw new Error("No story to publish");
 
-    const formData = new FormData();
-    formData.append("story", storyText);
-    formData.append("uid", userUID);  // Attach UID with the story
+        const formData = new FormData();
+        formData.append("uid", userUID);
+        formData.append("story", storyText);
+        formData.append("name", $('#name')?.value || '');
+        formData.append("age", $('#age')?.value || '');
+        formData.append("place", $('#place')?.value || '');
+        formData.append("productName", $('#productName')?.value || '');
+        formData.append("craftType", $('#craftType')?.value || '');
+        formData.append("materials", $('#materials')?.value || '');
+        formData.append("inspiration", $('#inspiration')?.value || '');
+        formData.append("audience", $('#audience')?.value || '');
+        formData.append("tags", tagsInput.value);
 
-    // optional: attach image if available
-    const imageFile = $('#image')?.files[0];
-    if (imageFile) formData.append("image", imageFile);
+        const imageFile = $('#image')?.files[0];
+        if (imageFile) formData.append("image", imageFile);
 
-    const resp = await fetch('/publish', {
-      method: 'POST',
-      body: formData
-    });
+        const resp = await fetch('/publish', {
+            method: 'POST',
+            body: formData
+        });
 
-    const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || 'Unknown error');
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || 'Unknown error');
 
-    statusEl.textContent = '✅ Published successfully!';
-    storyTextarea.value = '';
-    tagsInput.value = '';
-  } catch (err) {
-    console.error(err);
-    statusEl.textContent = '❌ ' + err.message;
-  } finally {
-    publishBtn.disabled = false;
-    publishBtn.textContent = '⬆ Publish';
-  }
+        statusEl.textContent = '✅ Published successfully!';
+        storyTextarea.value = '';
+        tagsInput.value = '';
+        $('#image').value = ''; // reset file input
+
+        // --- Automatically refresh latest posts ---
+        await loadPosts();
+
+    } catch (err) {
+        console.error(err);
+        statusEl.textContent = '❌ ' + err.message;
+    } finally {
+        publishBtn.disabled = false;
+        publishBtn.textContent = '⬆ Publish';
+    }
 });
+
+
