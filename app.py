@@ -17,7 +17,7 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 
 # Firebase setup
 cred = credentials.Certificate("firebase/store/firebase-service-account.json")
-initialize_app(cred, {"storageBucket": "artisan-3b8d6.appspot.com"})
+initialize_app(cred, {"storageBucket": "artisan-3b8d6.firebasestorage.app"})
 db = firestore.client()
 bucket = storage.bucket()
 
@@ -183,3 +183,4 @@ def get_posts():
 # ================== Run ==================
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=5000)
+
