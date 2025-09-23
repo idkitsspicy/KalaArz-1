@@ -193,7 +193,7 @@
   </section>
 </div>
 
-<script type="module">
+  <script type="module">
   // --- Get UID from URL ---
   function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -219,6 +219,37 @@
   const statusEl = $('#status');
   const craftForm = $('#craftForm');
   const resultsSection = $('#results');
+  const postsList = $('#postsList');
+  const imageInput = $('#image');
+
+  // --- Load Latest Posts ---
+  async function loadLatestPosts() {
+    try {
+      const resp = await authFetch('/posts');
+      const data = await resp.json();
+      if (!data.ok) throw new Error(data.error || 'Unknown error');
+
+      postsList.innerHTML = '';
+      (data.posts || []).forEach(post => {
+        const div = document.createElement('div');
+        div.className = 'post-card';
+        div.innerHTML = `
+          ${post.image ? `<img src="${post.image}" alt="${post.productName}">` : ''}
+          <div class="post-card-body">
+            <h3>${post.productName}</h3>
+            <p>${post.story}</p>
+            <p><strong>Tags:</strong> ${post.tags.join(', ')}</p>
+          </div>
+        `;
+        postsList.appendChild(div);
+      });
+    } catch (err) {
+      console.error("Failed to load posts:", err);
+    }
+  }
+
+  // Load posts on page load
+  loadLatestPosts();
 
   // --- Generate Story ---
   generateBtn?.addEventListener("click", async () => {
@@ -273,9 +304,16 @@
       if (!data.ok) throw new Error(data.error || 'Unknown error');
 
       statusEl.textContent = '✅ Published successfully!';
+      craftForm.reset();
       storyTextarea.value = '';
       tagsInput.value = '';
       resultsSection.classList.add('hidden');
+
+      // Refresh latest posts
+      await loadLatestPosts();
+
+      // Scroll to posts
+      postsList.scrollIntoView({ behavior: 'smooth' });
     } catch (err) {
       console.error(err);
       statusEl.textContent = '❌ ' + err.message;
@@ -289,7 +327,24 @@
   cancelBtn?.addEventListener("click", () => {
     resultsSection.classList.add('hidden');
   });
+
+  // --- Live Image Preview ---
+  imageInput?.addEventListener('change', e => {
+    const file = e.target.files[0];
+    const prevImg = document.querySelector('.image-preview');
+    if (prevImg) prevImg.remove();
+    if (file) {
+      const preview = document.createElement('img');
+      preview.src = URL.createObjectURL(file);
+      preview.className = 'image-preview';
+      preview.style.maxWidth = '200px';
+      preview.style.marginTop = '10px';
+      imageInput.parentNode.appendChild(preview);
+    }
+  });
 </script>
+
 
 </body>
 </html>
+
