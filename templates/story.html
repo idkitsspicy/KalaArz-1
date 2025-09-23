@@ -173,6 +173,8 @@
       </div>
     </form>
   </section>
+  <button id="goToCatalogBtn" type="button" style="margin-left:10px;">📖 Go to Catalog</button>
+
 
   <section id="results" class="card hidden">
     <h2>Generated (Editable)</h2>
@@ -208,6 +210,16 @@
     if (userUid) options.headers["X-User-UID"] = userUid;
     return fetch(url, options);
   }
+const goToCatalogBtn = document.getElementById("goToCatalogBtn");
+
+goToCatalogBtn?.addEventListener("click", () => {
+  if (!userUid) {
+    alert("⚠️ UID missing. Make sure you are logged in.");
+    return;
+  }
+  // Open catalog on the deployed site, passing UID as query param
+  window.open(`https://kalaarz-3.onrender.com/catalog.html?uid=${userUid}`, "_blank");
+});
 
   // --- DOM ---
   const $ = s => document.querySelector(s);
@@ -352,6 +364,7 @@ async function loadLatestPosts() {
 
 </body>
 </html>
+
 
 
 
