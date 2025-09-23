@@ -229,19 +229,27 @@
       const data = await resp.json();
       if (!data.ok) throw new Error(data.error || 'Unknown error');
 
-      postsList.innerHTML = '';
-      (data.posts || []).forEach(post => {
-        const div = document.createElement('div');
-        div.className = 'post-card';
-        div.innerHTML = `
-          ${post.image ? `<img src="${post.image}" alt="${post.productName}">` : ''}
-          <div class="post-card-body">
-            <h3>${post.productName}</h3>
-            <p>${post.story}</p>
-            <p><strong>Tags:</strong> ${post.tags.join(', ')}</p>
-          </div>
-        `;
-        postsList.appendChild(div);
+     postsList.innerHTML = '';
+if (!data.posts || data.posts.length === 0) {
+  postsList.innerHTML = '<p>No posts yet.</p>';
+} else {
+  data.posts.forEach(post => {
+    const div = document.createElement('div');
+    div.className = 'post-card';
+    div.innerHTML = `
+      ${post.image ? `<img src="${post.image}" alt="${post.productName}">` : ''}
+      <div class="post-card-body">
+        <h3>${post.productName}</h3>
+        <p>${post.story.length > 200 ? post.story.slice(0,200)+'…' : post.story}</p>
+        <p><strong>Tags:</strong> ${post.tags.join(', ')}</p>
+      </div>
+    `;
+    postsList.appendChild(div);
+  });
+}
+
+
+
       });
     } catch (err) {
       console.error("Failed to load posts:", err);
@@ -347,4 +355,5 @@
 
 </body>
 </html>
+
 
