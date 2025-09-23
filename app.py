@@ -95,6 +95,9 @@ def extract_json_from_text(text: str):
 
 # ================== Routes ==================
 
+@app.route("/")
+def login():
+ return render_template("login.html");
 # Serve story page and get UID from query params
 @app.route("/story")
 def story_page():
@@ -190,3 +193,4 @@ def get_posts():
 # ================== Run ==================
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=5000)
+
