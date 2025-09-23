@@ -105,25 +105,43 @@ def story_page():
 def generate_story():
     if not GEMINI_API_KEY:
         return jsonify(ok=False, error="Server not configured with GEMINI_API_KEY"), 500
+
     payload = request.get_json(force=True, silent=True) or {}
     prompt = craft_prompt(payload)
+
     try:
         model = genai.GenerativeModel(MODEL_NAME)
         resp = model.generate_content(prompt)
+
+        # Extract text from response
         text = getattr(resp, "text", None)
         if not text and hasattr(resp, "candidates") and resp.candidates:
             text = resp.candidates[0].content.parts[0].text
+
         if not text:
             return jsonify(ok=False, error="Empty response from model"), 502
+
+        # Try parsing structured JSON
         parsed = extract_json_from_text(text)
-        if not parsed:
-            return jsonify(ok=False, error="Could not parse model output", raw=text), 502
-        return jsonify(ok=True,
-                       story=parsed.get("story", "").strip(),
-                       tags=[str(t).strip() for t in parsed.get("tags", [])][:5])
+
+        if parsed:
+            story_text = parsed.get("story", "").strip()
+            tags_list = [str(t).strip() for t in parsed.get("tags", [])][:5]
+        else:
+            # fallback: use raw text if parsing fails
+            story_text = text.strip()
+            tags_list = []
+
+        return jsonify(
+            ok=True,
+            story=story_text,
+            tags=tags_list,
+            warning=None if parsed else "Could not parse structured JSON, using raw text",
+            raw=text
+        )
+
     except Exception as e:
         return jsonify(ok=False, error=str(e)), 500
-
 # ----- Publish Story -----
 @app.route("/publish", methods=["POST"])
 def publish_story():
@@ -183,5 +201,6 @@ def get_posts():
 # ================== Run ==================
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=5000)
+
 
 
