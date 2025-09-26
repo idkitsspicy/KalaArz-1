@@ -33,7 +33,7 @@ def allowed_file(filename):
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-MODEL_NAME = "gemini-1.5-flash"
+MODEL_NAME = "gemini-2.5-flash"
 
 # ================== Helpers ==================
 def craft_prompt(payload: dict) -> str:
@@ -201,6 +201,7 @@ def get_posts():
 # ================== Run ==================
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=5000)
+
 
 
 
